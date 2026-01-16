@@ -102,7 +102,7 @@ $role = $_SESSION['role'];
     <!-- POS is available for everyone -->
     <a href="sales/pos.php">
         <span>🛒</span>
-        POS
+        POS Kenya
     </a>
 
     <?php if($role==='admin'): ?>
