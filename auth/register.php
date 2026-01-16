@@ -17,22 +17,33 @@ if (isset($_POST['register'])) {
     } else {
         // Check if username exists
         $stmt = $conn->prepare("SELECT id FROM users WHERE username=? LIMIT 1");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        if ($stmt->get_result()->num_rows > 0) {
-            $error = "Username already taken.";
+        if (!$stmt) {
+            $error = "Something went wrong. Please try again later.";
         } else {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $role = "cashier"; // default role
-
-            $insert = $conn->prepare("INSERT INTO users(username, password, role) VALUES(?,?,?)");
-            $insert->bind_param("sss", $username, $hash, $role);
-
-            if ($insert->execute()) {
-                $success = "Registration successful! You can now login.";
-                header("refresh:2;url=login.php");
+            $stmt->bind_param("s", $username);
+            if (!$stmt->execute()) {
+                $error = "Something went wrong. Please try again later.";
             } else {
-                $error = "Something went wrong!";
+                $stmt->store_result();
+                if ($stmt->num_rows > 0) {
+                    $error = "Username already taken.";
+                } else {
+                    $hash = password_hash($password, PASSWORD_DEFAULT);
+                    $role = "cashier"; // default role
+
+                    $insert = $conn->prepare("INSERT INTO users(username, password, role) VALUES(?,?,?)");
+                    if (!$insert) {
+                        $error = "Something went wrong. Please try again later.";
+                    } else {
+                        $insert->bind_param("sss", $username, $hash, $role);
+                        if ($insert->execute()) {
+                            $success = "Registration successful! You can now login.";
+                            header("refresh:2;url=login.php");
+                        } else {
+                            $error = "Something went wrong!";
+                        }
+                    }
+                }
             }
         }
     }

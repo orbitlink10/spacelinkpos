@@ -18,26 +18,32 @@ if (isset($_POST['login'])) {
         $error = "Please enter username and password.";
     } else {
         $stmt = $conn->prepare("SELECT id, username, password, role FROM users WHERE username=? LIMIT 1");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        if (!$stmt) {
+            $error = "Something went wrong. Please try again later.";
+        } else {
+            $stmt->bind_param("s", $username);
+            if (!$stmt->execute()) {
+                $error = "Something went wrong. Please try again later.";
+            } else {
+                $stmt->store_result();
+                if ($stmt->num_rows === 1) {
+                    $stmt->bind_result($user_id, $user_name, $user_hash, $user_role);
+                    $stmt->fetch();
 
-        if ($result->num_rows === 1) {
-            $user = $result->fetch_assoc();
+                    if (password_verify($password, $user_hash)) {
+                        $_SESSION['user_id'] = $user_id;
+                        $_SESSION['role'] = $user_role;
+                        $_SESSION['username'] = $user_name;
+                        $_SESSION['last_activity'] = time();
 
-            if (password_verify($password, $user['password'])) {
+                        header("Location: ../sales/pos.php");
+                        exit;
+                    }
+                }
 
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['last_activity'] = time();
-
-                header("Location: ../sales/pos.php");
-                exit;
+                $error = "Invalid username or password.";
             }
         }
-
-        $error = "Invalid username or password.";
     }
 }
 ?>
